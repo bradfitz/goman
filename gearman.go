@@ -28,10 +28,9 @@ func (ij *IncomingJob) SendProgress(done int, total int) {
 }
 
 func NewClient(hostport string) Client {
-	return &client{hosts: []string{hostport}, hostState: make ( []hostState, 1 )}
+	return &client{hosts: []string{hostport}, hostState: make([]hostState, 1)}
 }
 
 func NewLoadBalancedClient(hostports []string) Client {
-	return &client{hosts: hostports, hostState: make ( []hostState, len ( hostports ) ) }
+	return &client{hosts: hostports, hostState: make([]hostState, len(hostports))}
 }
-

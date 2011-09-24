@@ -23,7 +23,6 @@
 
 
 
-
 package gearman
 
 import (
@@ -44,69 +43,69 @@ func (c *client) RegisterWorker(method string, handler func(job *IncomingJob) []
 	if c.handlers == nil {
 		c.handlers = make(map[string]func(job *IncomingJob) []byte)
 	}
-        c.handlers[method] = handler
+	c.handlers[method] = handler
 }
 
 func (c *client) Work() {
 	c.id = "jfidjfid"
 	for _, v := range c.hosts {
-		n, e := net.Dial ( "tcp", v )
+		n, e := net.Dial("tcp", v)
 		if e != nil {
 			continue
 		}
-		_, e = n.Write ( c.client_id() )
+		_, e = n.Write(c.client_id())
 		if e != nil {
 			return
 		}
-		go c.worker_loop ( n )
+		go c.worker_loop(n)
 	}
 	for {
-		time.Sleep ( 1e9 * 5 )
+		time.Sleep(1e9 * 5)
 	}
 }
 
-func ( c *client ) worker_loop ( n net.Conn ) {
+func (c *client) worker_loop(n net.Conn) {
 	defer n.Close()
 	for h, _ := range c.handlers {
-		buf := make ( []byte, 0 )
-		buf = append ( buf, []byte(h) ... )
-		buf = append ( buf, 0 )
-		_, e := n.Write ( make_req ( CAN_DO, []byte(h) ) )
+		buf := make([]byte, 0)
+		buf = append(buf, []byte(h)...)
+		buf = append(buf, 0)
+		_, e := n.Write(make_req(CAN_DO, []byte(h)))
 		if e != nil {
 			return
 		}
 	}
-	n.SetReadTimeout ( 1e9 * 60 )
-	_, e := n.Write ( make_req ( GRAB_JOB, []byte{} ) )
-	if e!= nil {
+	n.SetReadTimeout(1e9 * 60)
+	_, e := n.Write(make_req(GRAB_JOB, []byte{}))
+	if e != nil {
 		return
 	}
 	for {
 		// worker asks for jobs periodically
 		// server will only push a job to a sleeping worker
-		cmd, cmd_len, to, e := read_header ( n )
+		cmd, cmd_len, to, e := read_header(n)
 		if e != nil {
 			return
 		}
 		if to {
 			// timed out, ask for another job
-			_, e := n.Write ( make_req ( GRAB_JOB, []byte{} ) )
-			if e!= nil {
+			_, e := n.Write(make_req(GRAB_JOB, []byte{}))
+			if e != nil {
 				return
 			}
 			continue
 		}
 		if cmd == NO_JOB {
 			// no jobs, go asleep
-			_, e = n.Write ( make_req ( PRE_SLEEP, []byte{} ) )
+			_, e = n.Write(make_req(PRE_SLEEP, []byte{}))
 			if e != nil {
-				return 
+				return
 			}
 			continue
 		}
-		
-		databuf := make ( []byte, cmd_len )
-		_, e = io.ReadFull ( n, databuf )
+
+		databuf := make([]byte, cmd_len)
+		_, e = io.ReadFull(n, databuf)
 		if e != nil {
 			return
 		}
@@ -121,38 +120,38 @@ func ( c *client ) worker_loop ( n net.Conn ) {
 			done := false
 			var buf []byte = nil
 			for !done {
-				buf, done, e = c.do_work ( cmd, databuf )
+				buf, done, e = c.do_work(cmd, databuf)
 				if e != nil {
 					return
 				}
-				_, e = n.Write ( buf )
+				_, e = n.Write(buf)
 				if e != nil {
 					return
 				}
 			}
 		}
-		_, e = n.Write ( make_req ( GRAB_JOB, []byte{} ) )
-		if e!= nil {
+		_, e = n.Write(make_req(GRAB_JOB, []byte{}))
+		if e != nil {
 			return
 		}
 	}
 }
 
-func ( c *client ) do_work ( cmd uint32, data []byte ) ( []byte, bool, os.Error ) {
-	a := bytes.SplitN ( data, []byte{0}, 3 )
-	if len ( a ) != 3 {
-		return nil, true, os.NewError ( "not enough args" )
+func (c *client) do_work(cmd uint32, data []byte) ([]byte, bool, os.Error) {
+	a := bytes.SplitN(data, []byte{0}, 3)
+	if len(a) != 3 {
+		return nil, true, os.NewError("not enough args")
 	}
-	buf := a[0]  // handle
+	buf := a[0] // handle
 	f, ok := c.handlers[string(a[1])]
 	if !ok {
-		return nil, true, os.NewError ( "this worker does not handle " + string ( a[1] ) )
+		return nil, true, os.NewError("this worker does not handle " + string(a[1]))
 	}
-	res := f ( &IncomingJob{&Job{string(a[1]), a[2]}} )
-	if len ( res ) > 0 {
-		buf = append ( buf, 0 )
-		buf = append ( buf, res ... )
-		return make_req ( WORK_COMPLETE, buf ), true, nil
+	res := f(&IncomingJob{&Job{string(a[1]), a[2]}})
+	if len(res) > 0 {
+		buf = append(buf, 0)
+		buf = append(buf, res...)
+		return make_req(WORK_COMPLETE, buf), true, nil
 	}
-	return nil, true, os.NewError ( "dont know" )
+	return nil, true, os.NewError("dont know")
 }

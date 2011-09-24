@@ -21,12 +21,12 @@ func TestFoo(t *testing.T) {
 		t.Fatalf("Can't run unit tests without gearmand running on %s", TEST_ROUTER)
 	}
 
-	go func () {
+	go func() {
 		w := NewClient(TEST_ROUTER)
 		if w == nil {
 			t.Fatal("Got nil client")
 		}
-		w.RegisterWorker ( "geturl", geturl )
+		w.RegisterWorker("geturl", geturl)
 		w.Work()
 	}()
 	servers := []string{TEST_ROUTER}
@@ -34,13 +34,13 @@ func TestFoo(t *testing.T) {
 	if c == nil {
 		t.Fatal("Got nil client")
 	}
-	res := c.Call ( "geturl", []byte ( "http://tinychat.com" ) )
+	res := c.Call("geturl", []byte("http://tinychat.com"))
 	if res == nil {
-		t.Fatal ( "Bad response" )
+		t.Fatal("Bad response")
 	}
 }
 
-func geturl ( job *IncomingJob ) []byte {
-	url := string ( job.Data )
-	return []byte ( url )
+func geturl(job *IncomingJob) []byte {
+	url := string(job.Data)
+	return []byte(url)
 }

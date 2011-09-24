@@ -33,42 +33,42 @@ func (c *client) Call(method string, data []byte) []byte {
 }
 
 func (c *client) CallWithProgress(method string, data []byte, progress ProgressHandler) []byte {
-	maxtries := len ( c.hosts ) * 2
+	maxtries := len(c.hosts) * 2
 	var n net.Conn = nil
 	var jobhandle []byte = nil
-	rand.Seed ( time.Nanoseconds() )
+	rand.Seed(time.Nanoseconds())
 
 	// find a jobserver that will handle this method
 	for maxtries > 0 {
 		maxtries--
-		rnum := rand.Intn ( len ( c.hosts ) )
+		rnum := rand.Intn(len(c.hosts))
 		// is this conn alive?
-		if !( c.hostState[rnum].conn != nil && c.hostState[rnum].conn.RemoteAddr() != nil ) {
+		if !(c.hostState[rnum].conn != nil && c.hostState[rnum].conn.RemoteAddr() != nil) {
 			var e os.Error = nil
-			n, e = net.Dial ( "tcp", c.hosts[rnum] )
+			n, e = net.Dial("tcp", c.hosts[rnum])
 			if e != nil {
 				//log.Println ( "finding a job server " + e.String() )
 				continue
 			}
 		}
 		c.hostState[rnum].conn = n
-		buf := []byte ( method )
-		buf = append ( buf, 0 )
-		buf = append ( buf, []byte("jfifjid") ... )
-		buf = append ( buf, 0 )
-		buf = append ( buf, data ... )
-		_, e := n.Write ( make_req ( SUBMIT_JOB, buf ) )
+		buf := []byte(method)
+		buf = append(buf, 0)
+		buf = append(buf, []byte("jfifjid")...)
+		buf = append(buf, 0)
+		buf = append(buf, data...)
+		_, e := n.Write(make_req(SUBMIT_JOB, buf))
 		if e != nil {
 			n.Close()
 			continue
 		}
-		cmd, cmd_len, to, e := read_header ( n )
+		cmd, cmd_len, to, e := read_header(n)
 		if e != nil || to {
 			n.Close()
 			continue
 		}
-		data := make ( []byte, cmd_len )
-		_, e = io.ReadFull ( n, data )
+		data := make([]byte, cmd_len)
+		_, e = io.ReadFull(n, data)
 		if e != nil {
 			n.Close()
 			continue
@@ -84,9 +84,9 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 	}
 
 	for {
-		cmd, cmd_len, to, e := read_header ( n )
-		data := make ( []byte, cmd_len )
-		_, e = io.ReadFull ( n, data )
+		cmd, cmd_len, to, e := read_header(n)
+		data := make([]byte, cmd_len)
+		_, e = io.ReadFull(n, data)
 		if e != nil {
 			return nil
 		}
@@ -95,8 +95,8 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 		}
 		switch cmd {
 		case WORK_COMPLETE:
-			a := bytes.SplitN ( data, []byte{0}, 2 );
-			if len ( a ) != 2 {
+			a := bytes.SplitN(data, []byte{0}, 2)
+			if len(a) != 2 {
 				return nil
 			}
 			return a[1]
