@@ -3,7 +3,6 @@ import (
 	"os"
 	"net"
 	"io"
-	"log"
 )
 
 const (
@@ -80,7 +79,6 @@ func read_header ( n net.Conn ) ( uint32, uint32, bool, os.Error ) {
 			return 0, 0, false, e
 		}
 	}
-	log.Println ( headerbuf )
 	cmd := (uint32(headerbuf[4]) << 24) | (uint32(headerbuf[5]) << 16) |
 		(uint32(headerbuf[6]) << 8) | uint32(headerbuf[7])
 	cmd_len := (uint32(headerbuf[8]) << 24) | (uint32(headerbuf[9]) << 16) |
