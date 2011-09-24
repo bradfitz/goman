@@ -122,12 +122,15 @@ func (c *client) worker_loop(n net.Conn) {
 			for !done {
 				buf, done, e = c.do_work(cmd, databuf)
 				if e != nil {
-					return
+					break
 				}
-				_, e = n.Write(buf)
-				if e != nil {
-					return
-				}
+			}
+			if buf == nil {
+				buf = []byte{1, 0}
+			}
+			_, e = n.Write(make_req(WORK_COMPLETE, buf))
+			if e != nil {
+				return
 			}
 		}
 		_, e = n.Write(make_req(GRAB_JOB, []byte{}))
@@ -140,18 +143,18 @@ func (c *client) worker_loop(n net.Conn) {
 func (c *client) do_work(cmd uint32, data []byte) ([]byte, bool, os.Error) {
 	a := bytes.SplitN(data, []byte{0}, 3)
 	if len(a) != 3 {
-		return nil, true, os.NewError("not enough args")
+		return []byte{1, 0}, true, os.NewError("not enough args")
 	}
 	buf := a[0] // handle
+	buf = append(buf, 0)
 	f, ok := c.handlers[string(a[1])]
 	if !ok {
-		return nil, true, os.NewError("this worker does not handle " + string(a[1]))
+		return buf, true, os.NewError("this worker does not handle " + string(a[1]))
 	}
 	res := f(&IncomingJob{&Job{string(a[1]), a[2]}})
-	if len(res) > 0 {
-		buf = append(buf, 0)
+	if res != nil && len(res) > 0 {
 		buf = append(buf, res...)
-		return make_req(WORK_COMPLETE, buf), true, nil
+		return buf, true, nil
 	}
-	return nil, true, os.NewError("dont know")
+	return buf, true, os.NewError("dont know")
 }

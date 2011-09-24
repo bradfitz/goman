@@ -54,7 +54,8 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 		c.hostState[rnum].conn = n
 		buf := []byte(method)
 		buf = append(buf, 0)
-		buf = append(buf, []byte("jfifjid")...)
+		c.id = "jfidfjid"
+		buf = append(buf, []byte(c.id)...)
 		buf = append(buf, 0)
 		buf = append(buf, data...)
 		_, e := n.Write(make_req(SUBMIT_JOB, buf))
@@ -95,6 +96,9 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 		}
 		switch cmd {
 		case WORK_COMPLETE:
+			if len(data) == 0 {
+				return nil
+			}
 			a := bytes.SplitN(data, []byte{0}, 2)
 			if len(a) != 2 {
 				return nil
