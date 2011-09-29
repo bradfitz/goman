@@ -20,7 +20,10 @@ type Client interface {
 
 	// For being a client:
 	Call(method string, data []byte) []byte
+	CallHighPriority(method string, data []byte) []byte
+	CallBackground(method string, data []byte) []byte
 	CallWithProgress(method string, data []byte, progress ProgressHandler) []byte
+	CallHighPriorityWithProgress(method string, data []byte, progress ProgressHandler) []byte
 }
 
 func (ij *IncomingJob) SendProgress(done int, total int) {

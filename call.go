@@ -29,10 +29,25 @@ import (
 )
 
 func (c *client) Call(method string, data []byte) []byte {
-	return c.CallWithProgress(method, data, nil)
+	return c.call(method, data, false, false, nil)
+}
+
+func (c *client) CallHighPriority(method string, data []byte) []byte {
+	return c.call(method, data, true, false, nil )
+}
+
+func (c *client) CallBackground(method string, data []byte) []byte {
+	return c.call ( method, data, false, true, nil )
 }
 
 func (c *client) CallWithProgress(method string, data []byte, progress ProgressHandler) []byte {
+	return c.call(method, data, false, false, progress )
+}
+
+func (c *client) CallHighPriorityWithProgress(method string, data []byte, progress ProgressHandler) []byte {	return c.call ( method, data, true, false, progress )
+}
+
+func (c *client) call(method string, data []byte, highprio bool, background bool, progress ProgressHandler) []byte {
 	maxtries := len(c.hosts) * 2
 	var n net.Conn = nil
 	var jobhandle []byte = nil
@@ -43,7 +58,8 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 		maxtries--
 		rnum := rand.Intn(len(c.hosts))
 		// is this conn alive?
-		if !(c.hostState[rnum].conn != nil && c.hostState[rnum].conn.RemoteAddr() != nil) {
+		n = c.hostState[rnum].conn
+		if n == nil || n.RemoteAddr() == nil {
 			var e os.Error = nil
 			n, e = net.Dial("tcp", c.hosts[rnum])
 			if e != nil {
@@ -51,14 +67,21 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 				continue
 			}
 		}
-		c.hostState[rnum].conn = n
+		// submit job packet
 		buf := []byte(method)
 		buf = append(buf, 0)
 		c.id = "jfidfjid"
 		buf = append(buf, []byte(c.id)...)
 		buf = append(buf, 0)
 		buf = append(buf, data...)
-		_, e := n.Write(make_req(SUBMIT_JOB, buf))
+		job_type := SUBMIT_JOB
+		if highprio {
+			job_type = SUBMIT_JOB_HIGH
+		}
+		if background {
+			job_type = SUBMIT_JOB_BG
+		}
+		_, e := n.Write(make_req(job_type, buf))
 		if e != nil {
 			n.Close()
 			continue
@@ -84,6 +107,10 @@ func (c *client) CallWithProgress(method string, data []byte, progress ProgressH
 		return nil
 	}
 
+	if background {
+		return jobhandle
+	}
+	
 	for {
 		cmd, cmd_len, to, e := read_header(n)
 		data := make([]byte, cmd_len)

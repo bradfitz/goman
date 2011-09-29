@@ -1,3 +1,14 @@
+O=6
+GC=$(O)g
+LD=$(O)l
+.SUFFIXES : .go .$(O)
+
+.go.6:
+	$(GC) $<
+
+.6:
+	$(LD) -o $@ $<
+
 include $(GOROOT)/src/Make.inc
 
 TARG=danga/gearman
@@ -9,6 +20,3 @@ GOFILES=\
 	util.go\
 
 include $(GOROOT)/src/Make.pkg
-
-w1.6: w1.go
-w1: w1.6
