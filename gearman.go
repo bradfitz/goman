@@ -34,4 +34,3 @@ func NewClient(hostport string) Client {
 func NewLoadBalancedClient(hostports []string) Client {
 	return &client{hosts: hostports}
 }
-

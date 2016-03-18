@@ -1,8 +1,8 @@
 package gearman
 
 import (
-	"testing"
 	"net"
+	"testing"
 )
 
 const TEST_ROUTER = "localhost:4730"
