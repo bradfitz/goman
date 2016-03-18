@@ -16,7 +16,7 @@ func (c *client) RegisterWorker(method string, handler func(job *IncomingJob) []
 	if c.handlers == nil {
 		c.handlers = make(map[string]func(job *IncomingJob) []byte)
 	}
-        c.handlers[method] = handler
+	c.handlers[method] = handler
 }
 
 func (c *client) Work() {
